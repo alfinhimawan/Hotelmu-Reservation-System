@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database config (contains credentials)
+backend/config/config.json
+
+# Uploaded images/files
+backend/image/customer/*
+backend/image/tipe_kamar/*
+backend/image/user/*
+!backend/image/customer/.gitkeep
+!backend/image/tipe_kamar/.gitkeep
+!backend/image/user/.gitkeep
+
+# Lock files (optional - choose one)
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
