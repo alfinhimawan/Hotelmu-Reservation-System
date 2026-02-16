@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
+import { API_ENDPOINTS } from "../../constants/api";
 
 const FormTambahDataKamar = () => {
   const [foto, setFoto] = useState();
@@ -8,6 +10,7 @@ const FormTambahDataKamar = () => {
   const [harga, setHarga] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [saveImage, setSaveImage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   function handleUploadChange(e) {
@@ -28,13 +31,15 @@ const FormTambahDataKamar = () => {
   function AddData(event) {
     event.preventDefault();
 
+    setIsLoading(true);
+
     let formData = new FormData();
     formData.append("foto", saveImage);
     formData.append("nama_tipe_kamar", namaTipeKamar);
     formData.append("harga", harga);
     formData.append("deskripsi", deskripsi);
 
-    let url = "http://localhost:8081/tipe_kamar";
+    let url = API_ENDPOINTS.TIPE_KAMAR;
 
     axios
       .post(url, formData, {
@@ -43,19 +48,31 @@ const FormTambahDataKamar = () => {
         },
       })
       .then((response) => {
-        if (response.data.message === "Nama tipe kamar sudah ada") {
-          alert("Nama tipe kamar sudah ada");
-        } else if (response.data.message === "data has been inserted") {
-          alert("Selesai Menambahkan Data Baru");
-          setNamaTipeKamar("");
-          setHarga("");
-          setDeskripsi("");
-          navigate("/dataTipeKamar");
+        if (response.status === 200 || response.status === 201) {
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: response.data.message || "Data tipe kamar berhasil ditambahkan",
+            confirmButtonColor: "#3085d6",
+          }).then(() => {
+            setNamaTipeKamar("");
+            setHarga("");
+            setDeskripsi("");
+            navigate("/dataTipeKamar");
+          });
         }
       })
       .catch((error) => {
         console.log(error);
-        alert("Gagal menambahkan data karena nama tipe kamar sudah ada");
+        Swal.fire({
+          icon: "error",
+          title: "Gagal!",
+          text: error.response?.data?.message || "Terjadi kesalahan saat menambahkan data",
+          confirmButtonColor: "#3085d6",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }
 
@@ -127,10 +144,23 @@ const FormTambahDataKamar = () => {
             Kembali
           </Link>
           <button
-            className="w-1/2 h-[52px] text-white primary-bg rounded-lg hidden sm:block mt-4 ml-4"
             type="submit"
+            disabled={isLoading}
+            className={`w-1/2 h-[52px] text-white rounded-lg hidden sm:flex mt-4 ml-4 justify-center items-center ${
+              isLoading ? 'bg-gray-400 cursor-not-allowed' : 'primary-bg hover:opacity-90'
+            }`}
           >
-            Tambah
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Memproses...
+              </>
+            ) : (
+              'Tambah'
+            )}
           </button>
         </div>
       </form>

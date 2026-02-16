@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, editData } from "../../assets";
 import axios from "axios";
+import Swal from "sweetalert2";
+import { API_ENDPOINTS } from "../../constants/api";
 import "./style/stylesUser.css"; // Impor file CSS Anda di sini
 
 const Table = () => {
@@ -19,7 +21,7 @@ const Table = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8081/user`, {
+      .get(API_ENDPOINTS.USER, {
         headers: { Authorization: "Bearer " + sessionStorage.getItem("token") },
       })
       .then((res) => {
@@ -44,7 +46,7 @@ const Table = () => {
       nama_user: search,
     };
     axios
-      .post(`http://localhost:8081/user/search`, data, {
+      .post(`${API_ENDPOINTS.USER}/search`, data, {
         headers: {
           Authorization: "Bearer " + sessionStorage.getItem("token"),
         },
@@ -62,7 +64,7 @@ const Table = () => {
       handleCari();
     } else if (search === "") {
       axios
-        .get(`http://localhost:8081/user`, {
+        .get(API_ENDPOINTS.USER, {
           headers: {
             Authorization: "Bearer " + sessionStorage.getItem("token"),
           },
@@ -78,27 +80,46 @@ const Table = () => {
   }, [search]);
 
   function Delete(id) {
-    let url = "http://localhost:8081/user/" + id;
-    if (window.confirm("Apakah Anda Yakin Untuk Menghapus Data?")) {
-      axios
-        .delete(url, {
-          headers: {
-            Authorization: "Bearer " + sessionStorage.getItem("token"),
-          },
-        })
-        .then((response) => {
-          console.log(response);
-          window.location.reload(false);
-          // tipeKamar()
-        })
-        .catch((error) => {
-          console.log(error);
-          // if(window.confirm("Error")){
-          //     window.location.reload(false);
-          // }
-        });
-    }
-    // window.location.reload(false);
+    let url = `${API_ENDPOINTS.USER}/${id}`;
+    Swal.fire({
+      title: 'Hapus Data?',
+      text: 'Apakah Anda yakin ingin menghapus data user ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios
+          .delete(url, {
+            headers: {
+              Authorization: "Bearer " + sessionStorage.getItem("token"),
+            },
+          })
+          .then((response) => {
+            console.log(response);
+            Swal.fire({
+              icon: 'success',
+              title: 'Terhapus!',
+              text: response.data.message || 'Data user berhasil dihapus',
+              confirmButtonColor: '#3085d6',
+            }).then(() => {
+              window.location.reload(false);
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Gagal!',
+              text: error.response?.data?.message || 'Gagal menghapus data user',
+              confirmButtonColor: '#3085d6',
+            });
+          });
+      }
+    });
   }
 
   useEffect(() => {
@@ -179,7 +200,7 @@ const Table = () => {
               <td className="p-4 ">
                 <img
                   className="w-14 rounded-full"
-                  src={`http://localhost:8081/image/user/${user.foto}`}
+                  src={`${API_ENDPOINTS.IMAGE_USER}/${user.foto}`}
                   alt=""
                 />
               </td>

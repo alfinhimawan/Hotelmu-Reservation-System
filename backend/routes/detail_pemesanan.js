@@ -1,22 +1,17 @@
-//import library
 const express = require("express");
 const bodyParser = require("body-parser");
 
-//implementasi library
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//import model
 const model = require("../models/index");
 const detail_pemesanan = model.detail_pemesanan;
 
-//import auth
 const auth = require("../auth");
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = "TryMe";
 
-//get data
 app.get("/", auth, (req, res) => {
   detail_pemesanan
     .findAll()
@@ -32,7 +27,6 @@ app.get("/", auth, (req, res) => {
     });
 });
 
-//get data by id
 app.get("/:id", auth, (req, res) => {
   detail_pemesanan
     .findOne({ where: { id_detail_pemesanan: req.params.id } })
@@ -48,7 +42,6 @@ app.get("/:id", auth, (req, res) => {
     });
 });
 
-//post data
 app.post("/", auth, (req, res) => {
   let data = {
     id_detail_pemesanan: req.body.id_detail_pemesanan,
@@ -71,7 +64,6 @@ app.post("/", auth, (req, res) => {
     });
 });
 
-//edit data by id
 app.put("/:id", auth, (req, res) => {
   let param = {
     id_detail_pemesanan: req.params.id,
@@ -96,7 +88,6 @@ app.put("/:id", auth, (req, res) => {
     });
 });
 
-//delete data by id
 app.delete("/:id", auth, (req, res) => {
   let param = {
     id_detail_pemesanan: req.params.id,

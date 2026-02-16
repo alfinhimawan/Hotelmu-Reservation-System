@@ -8,6 +8,7 @@ import {
   tipe,
 } from "../../assets";
 import { DummyListKamar } from "../../constants";
+import { API_ENDPOINTS } from '../../constants/api';
 
 const ListKamar = ({ data }) => {
   console.log(data);
@@ -26,7 +27,7 @@ const ListKamar = ({ data }) => {
           return (
             <Link to={`/detailKamar/${room.id_tipe_kamar}`} className="flex-col  mt-14" key={i}>
             {/* <div className='w-[360px] h-[341px]'>{room.Image}</div> */}
-            <img className="w-96 h-60 object-center object-cover rounded-lg" src={`http://localhost:8081/image/tipe_kamar/${room.foto}`} alt="" />
+            <img className="w-96 h-60 object-center object-cover rounded-lg" src={`${API_ENDPOINTS.IMAGE_TIPE_KAMAR}/${room.foto}`} alt="" />
             <div className="mt-6">
               <h1 className="text-base font-semibold">{room.nama_tipe_kamar}</h1>
               <p className="text-sm mt-2">{room.harga.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })} Per Malam</p>

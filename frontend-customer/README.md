@@ -26,7 +26,7 @@ Folder ini berisi source code frontend untuk customer (tamu hotel) aplikasi Hote
    ```
 
 ## 📝 Catatan
-- Pastikan backend sudah berjalan di port 8081
+- Pastikan backend sudah berjalan di port 5000
 - Akses: http://localhost:5174 (default Vite, bisa berbeda)
 - Customer harus registrasi/login sebelum melakukan pemesanan.
 

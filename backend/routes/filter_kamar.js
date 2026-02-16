@@ -31,7 +31,7 @@ app.post('/', auth, async (req, res) => {
                               [operator.between]: [checkInDate, checkOutDate],
                           },
                       },
-                      required: false, // Use this to perform a left join
+                      required: false, 
                   },
               ],
           },
@@ -49,7 +49,6 @@ app.post('/', auth, async (req, res) => {
       roomType.foto = roomData[i].foto;
       roomType.kamar = [];
 
-      // Filter kamar yang tersedia
       roomData[i].kamar.forEach((kamar) => {
           if (!kamar.detail_pemesanan || kamar.detail_pemesanan.length === 0) {
               roomType.kamar.push(kamar);

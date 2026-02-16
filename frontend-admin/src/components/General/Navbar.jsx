@@ -1,6 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Swal from 'sweetalert2';
 
 import { close, close2, logo, menu, menu2 } from "../../assets";
 import { navLinks } from "../../constants";
@@ -10,8 +11,58 @@ const Navbar = () => {
   let navigate = useNavigate();
 
   function logout() {
-    sessionStorage.clear();
-    navigate("/loginAdmin");
+    Swal.fire({
+      title: 'Yakin ingin logout?',
+      text: 'Anda akan keluar dari akun ini',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Logout',
+      cancelButtonText: 'Batal',
+      didOpen: (modal) => {
+        const confirmBtn = modal.querySelector('.swal2-confirm');
+        const cancelBtn = modal.querySelector('.swal2-cancel');
+        
+        if (confirmBtn) {
+          confirmBtn.style.backgroundColor = '#d33';
+          confirmBtn.style.color = 'white';
+          confirmBtn.style.padding = '10px 20px';
+          confirmBtn.style.fontSize = '16px';
+          confirmBtn.style.fontWeight = 'bold';
+          confirmBtn.style.border = 'none';
+          confirmBtn.style.borderRadius = '4px';
+          confirmBtn.style.cursor = 'pointer';
+        }
+        
+        if (cancelBtn) {
+          cancelBtn.style.backgroundColor = '#3085d6';
+          cancelBtn.style.color = 'white';
+          cancelBtn.style.padding = '10px 20px';
+          cancelBtn.style.fontSize = '16px';
+          cancelBtn.style.fontWeight = 'bold';
+          cancelBtn.style.border = 'none';
+          cancelBtn.style.borderRadius = '4px';
+          cancelBtn.style.cursor = 'pointer';
+          cancelBtn.style.marginRight = '10px';
+        }
+      },
+      allowOutsideClick: false,
+      allowEscapeKey: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: 'Logout Berhasil',
+          text: 'Anda telah keluar dari akun',
+          icon: 'success',
+          confirmButtonColor: '#3085d6',
+          timer: 1500,
+          allowOutsideClick: false,
+          allowEscapeKey: false
+        }).then(() => {
+          sessionStorage.clear();
+          navigate("/loginAdmin");
+        });
+      }
+    });
   }
 
   return (

@@ -4,6 +4,7 @@ import { useContext } from 'react'
 import DateContext from '../../../context/DateProvider'
 import axios from 'axios'
 import { Link, useParams } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../constants/api';
 
 const Detail = () => {
 
@@ -22,7 +23,7 @@ const Detail = () => {
     // }, [])
 
     useEffect(() => {
-        axios.get(`http://localhost:8081/tipe_kamar/${id}`, {
+        axios.get(`${API_ENDPOINTS.TIPE_KAMAR}/${id}`, {
             headers : {'Authorization' : 'Bearer ' + sessionStorage.getItem('token')}
         })
         .then(res => {
@@ -36,7 +37,7 @@ const Detail = () => {
     }, [])
     
     useEffect(() => {
-        axios.get(`http://localhost:8081/tipe_kamar/${id}`, {
+        axios.get(`${API_ENDPOINTS.TIPE_KAMAR}/${id}`, {
             headers : {'Authorization' : 'Bearer ' + sessionStorage.getItem('token')}
         })
         .then(res => {
@@ -76,7 +77,7 @@ const Detail = () => {
   return (
     <div className='flex flex-col mt-20'>
         <div className='flex justify-between'>
-            <img className='w-full h-96 object-cover object-center rounded-lg' src={`http://localhost:8081/image/tipe_kamar/${tipeKamar.foto}`} alt="room1" />
+            <img className='w-full h-96 object-cover object-center rounded-lg' src={`${API_ENDPOINTS.IMAGE_TIPE_KAMAR}/${tipeKamar.foto}`} alt="room1" />
             {/* <img className='w-[396px] object-cover' src={room2} alt="room2" /> */}
         </div>
 

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
 import { useParams } from "react-router-dom";
+import { API_ENDPOINTS } from "../../constants/api";
 
 const FormEditUser = () => {
   let [foto, setFoto] = useState();
@@ -10,6 +12,7 @@ const FormEditUser = () => {
   let [email, setEmail] = useState();
   let [password, setPassword] = useState();
   let [role, setRole] = useState();
+  let [isLoading, setIsLoading] = useState(false);
 
   const { id } = useParams();
 
@@ -24,7 +27,7 @@ const FormEditUser = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8081/user/${id}`, {
+      .get(`${API_ENDPOINTS.USER}/${id}`, {
         headers: { Authorization: "Bearer " + sessionStorage.getItem("token") },
       })
       .then((res) => {
@@ -48,6 +51,8 @@ const FormEditUser = () => {
   function Edit(event) {
     event.preventDefault();
   
+    setIsLoading(true);
+
     let formData = new FormData();
     formData.append("foto", saveImage);
     formData.append("nama_user", namaUser);
@@ -55,7 +60,7 @@ const FormEditUser = () => {
     formData.append("password", password);
     formData.append("role", role);
   
-    let url = `http://localhost:8081/user/${id}`;
+    let url = `${API_ENDPOINTS.USER}/${id}`;
   
     axios
       .put(url, formData, {
@@ -65,17 +70,27 @@ const FormEditUser = () => {
       })
       .then((response) => {
         if (response.status === 200) {
-          if (response.data.message === "Nama pengguna sudah ada") {
-            alert("Nama pengguna sudah ada");
-          } else {
-            alert("Selesai Update Data?");
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: response.data.message || "Data user berhasil diupdate",
+            confirmButtonColor: "#3085d6",
+          }).then(() => {
             navigate("/dataUser");
-          }
+          });
         }
       })
       .catch((error) => {
         console.log(error);
-        alert("Terjadi kesalahan saat mengupdate data karena nama pengguna sudah ada");
+        Swal.fire({
+          icon: "error",
+          title: "Gagal!",
+          text: error.response?.data?.message || "Terjadi kesalahan saat mengupdate data",
+          confirmButtonColor: "#3085d6",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }
   
@@ -166,8 +181,24 @@ const FormEditUser = () => {
           >
             Kembali
           </Link>
-          <button className="w-1/2 h-[52px] text-white primary-bg rounded-lg hidden sm:block mt-4 ml-4">
-            Edit
+          <button 
+            type="submit"
+            disabled={isLoading}
+            className={`w-1/2 h-[52px] text-white rounded-lg hidden sm:flex mt-4 ml-4 justify-center items-center ${
+              isLoading ? 'bg-gray-400 cursor-not-allowed' : 'primary-bg hover:opacity-90'
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Memproses...
+              </>
+            ) : (
+              'Ubah'
+            )}
           </button>
         </div>
       </form>

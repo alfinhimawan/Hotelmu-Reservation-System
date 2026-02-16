@@ -33,7 +33,7 @@ Folder ini berisi source code backend (REST API) untuk aplikasi Hotelmu.
 
 ## 📝 Catatan
 - Pastikan database MySQL sudah berjalan dan konfigurasi sudah benar.
-- Port default: 8081
+- Port default: 5000
 - Semua endpoint membutuhkan autentikasi kecuali endpoint login/register.
 
 ---

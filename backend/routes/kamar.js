@@ -1,25 +1,20 @@
-//import library
 const express = require('express');
 const bodyParser = require('body-parser');
 
-//implementasi library
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 const { Op } = require("sequelize")
 
-//import model
 const model = require('../models/index');
 const kamar = model.kamar
 const tipe_kamar = model.tipe_kamar
 
-//import auth
 const auth = require("../auth")
 const jwt = require("jsonwebtoken")
 const SECRET_KEY = "TryMe"
 
-//get data
 app.get("/", auth, (req,res) => {
     kamar.findAll({include: [{model: tipe_kamar, as:'tipe_kamar'}]})
         .then(result => {
@@ -34,7 +29,6 @@ app.get("/", auth, (req,res) => {
         })
 })
 
-//get data by id
 app.get("/:id", auth, (req, res) => {
     kamar.findOne({ where: { id_kamar: req.params.id } })
         .then(result => {
@@ -46,7 +40,7 @@ app.get("/:id", auth, (req, res) => {
             } else {
                 res.status(404).json({
                     status: "error",
-                    message: "Kamar tidak ditemukan"
+                    message: "Room not found"
                 });
             }
         })
@@ -58,7 +52,6 @@ app.get("/:id", auth, (req, res) => {
         });
 });
 
-//search data by nomor_kamar
 app.post("/search", auth, (req, res) => {
     kamar
       .findAll({
@@ -81,14 +74,13 @@ app.post("/search", auth, (req, res) => {
       });
 });
 
-//post data
 app.post("/", auth, async (req, res) => {
     try {
         const existingKamar = await kamar.findOne({ where: { nomor_kamar: req.body.nomor_kamar } });
 
         if (existingKamar) {
             res.json({
-                message: "Nomor kamar sudah ada"
+                message: "Room number already exists"
             });
         } else {
             const data = {
@@ -99,7 +91,7 @@ app.post("/", auth, async (req, res) => {
             const createdKamar = await kamar.create(data);
 
             res.json({
-                message: "Selesai Menambahkan Data Baru?",
+                message: "Room created successfully",
                 kamar: createdKamar
             });
         }
@@ -110,14 +102,13 @@ app.post("/", auth, async (req, res) => {
     }
 });
 
-//edit data by id
 app.put("/:id", auth, async (req, res) => {
     try {
         const existingKamar = await kamar.findOne({ where: { nomor_kamar: req.body.nomor_kamar } });
 
         if (existingKamar && existingKamar.id_kamar != req.params.id) {
             res.json({
-                message: "Nomor kamar sudah ada"
+                message: "Room number already exists"
             });
         } else {
             let param = {
@@ -131,11 +122,11 @@ app.put("/:id", auth, async (req, res) => {
 
             if (result[0] === 1) {
                 res.json({
-                    message: "Selesai Mengupdate Data"
+                    message: "Room updated successfully"
                 });
             } else {
                 res.status(404).json({
-                    message: "Kamar tidak ditemukan"
+                    message: "Room not found"
                 });
             }
         }
@@ -146,7 +137,6 @@ app.put("/:id", auth, async (req, res) => {
     }
 });
 
-//delete data by id
 app.delete("/:id", auth, (req, res) => {
     let param = {
         id_kamar: req.params.id
@@ -161,7 +151,7 @@ app.delete("/:id", auth, (req, res) => {
             } else {
                 res.status(404).json({
                     status: "error",
-                    message: "Kamar tidak ditemukan"
+                    message: "Room not found"
                 });
             }
         })

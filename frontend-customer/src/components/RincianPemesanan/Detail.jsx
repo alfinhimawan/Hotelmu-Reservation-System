@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import moment from "moment";
+import { API_ENDPOINTS } from '../../constants/api';
 
 const Detail = () => {
   let [pemesanan, setPemesanan] = useState([]);
@@ -10,7 +11,7 @@ const Detail = () => {
   useEffect(() => {
     if (id) {
       axios
-        .get(`http://localhost:8081/pemesanan/` + id, {
+        .get(`${API_ENDPOINTS.PEMESANAN}/${id}`, {
           headers: {
             Authorization: "Bearer " + sessionStorage.getItem("token"),
           },

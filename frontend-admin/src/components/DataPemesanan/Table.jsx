@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, editData } from "../../assets";
 import axios from "axios";
+import Swal from "sweetalert2";
 import moment from "moment";
+import { API_ENDPOINTS } from "../../constants/api";
 import "./style/stylesPemesanan.css";
 
 const Table = () => {
@@ -21,7 +23,7 @@ const Table = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8081/pemesanan`, {
+      .get(API_ENDPOINTS.PEMESANAN, {
         headers: { Authorization: "Bearer " + sessionStorage.getItem("token") },
       })
       .then((res) => {
@@ -38,7 +40,7 @@ const Table = () => {
       tgl_check_in: search,
     };
     axios
-      .post(`http://localhost:8081/pemesanan/search`, data, {
+      .post(`${API_ENDPOINTS.PEMESANAN}/search`, data, {
         headers: {
           Authorization: "Bearer " + sessionStorage.getItem("token"),
         },
@@ -57,7 +59,7 @@ const Table = () => {
       nama_tamu: searchNama,
     };
     axios
-      .post(`http://localhost:8081/pemesanan/findByNamaTamu`, data, {
+      .post(`${API_ENDPOINTS.PEMESANAN}/findByNamaTamu`, data, {
         headers: {
           Authorization: "Bearer " + sessionStorage.getItem("token"),
         },
@@ -76,7 +78,7 @@ const Table = () => {
       handleCari();
     } else if (search === "") {
       axios
-        .get(`http://localhost:8081/pemesanan`, {
+        .get(API_ENDPOINTS.PEMESANAN, {
           headers: {
             Authorization: "Bearer " + sessionStorage.getItem("token"),
           },
@@ -96,7 +98,7 @@ const Table = () => {
       handleSearchByName();
     } else if (searchNama === "") {
       axios
-        .get(`http://localhost:8081/pemesanan`, {
+        .get(API_ENDPOINTS.PEMESANAN, {
           headers: {
             Authorization: "Bearer " + sessionStorage.getItem("token"),
           },
@@ -112,27 +114,46 @@ const Table = () => {
   }, [searchNama]);
 
   function Delete(id) {
-    let url = "http://localhost:8081/pemesanan/" + id;
-    if (window.confirm("Apakah Anda Yakin Untuk Menghapus Data?")) {
-      // console.log(id)
-      axios
-        .delete(url, {
-          headers: {
-            Authorization: "Bearer " + sessionStorage.getItem("token"),
-          },
-        })
-        .then((response) => {
-          console.log(response);
-          window.location.reload(false);
-          // tipeKamar()
-        })
-        .catch((error) => {
-          console.log(error);
-          // if(window.confirm("Error")){
-          //     window.location.reload(false);
-          // }
-        });
-    }
+    let url = `${API_ENDPOINTS.PEMESANAN}/${id}`;
+    Swal.fire({
+      title: 'Hapus Data?',
+      text: 'Apakah Anda yakin ingin menghapus data pemesanan ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios
+          .delete(url, {
+            headers: {
+              Authorization: "Bearer " + sessionStorage.getItem("token"),
+            },
+          })
+          .then((response) => {
+            console.log(response);
+            Swal.fire({
+              icon: 'success',
+              title: 'Terhapus!',
+              text: response.data.message || 'Data pemesanan berhasil dihapus',
+              confirmButtonColor: '#3085d6',
+            }).then(() => {
+              window.location.reload(false);
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Gagal!',
+              text: error.response?.data?.message || 'Gagal menghapus data pemesanan',
+              confirmButtonColor: '#3085d6',
+            });
+          });
+      }
+    });
     // window.location.reload(false);
   }
 
@@ -153,7 +174,7 @@ const Table = () => {
   // const handleStatusChange = (id, newStatus) => {
   //   axios
   //     .put(
-  //       `http://localhost:8081/pemesanan/${id}`,
+  //       `http://localhost:5000/pemesanan/${id}`,
   //       { status_pemesanan: newStatus },
   //       {
   //         headers: {
@@ -185,7 +206,7 @@ const Table = () => {
 
     axios
       .put(
-        `http://localhost:8081/pemesanan/${id}`,
+        `${API_ENDPOINTS.PEMESANAN}/${id}`,
         { status_pemesanan: newStatus, id_user:sessionStorage.getItem("id_user") },
         {
           headers: {

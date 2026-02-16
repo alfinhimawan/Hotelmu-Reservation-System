@@ -422,7 +422,7 @@ app.post("/", auth, async (req, res) => {
   ) {
     // Mengembalikan pesan kesalahan jika tidak memenuhi syarat
     return res.json({
-      message: "Maaf, kamar yang Anda pilih saat ini tidak tersedia",
+      message: "Sorry, the room you selected is currently unavailable",
     });
   } else {
     // Membuat pemesanan baru jika memenuhi syarat
@@ -448,7 +448,7 @@ app.post("/", auth, async (req, res) => {
         return res.json({
           data: result,
           statusCode: res.statusCode,
-          message: "Pemesanan baru telah dibuat",
+          message: "Booking created successfully",
         });
       })
       .catch((error) => {
@@ -482,7 +482,7 @@ app.put("/:id", auth, (req, res) => {
       // Cek apakah status saat ini adalah "check_out"
       if (pemesanan.status_pemesanan === "check_out") {
         return res.status(400).json({
-          message: "Status 'check_out' tidak dapat diubah kembali",
+          message: "Status 'check_out' cannot be changed",
         });
       }
 

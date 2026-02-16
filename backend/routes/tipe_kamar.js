@@ -1,4 +1,3 @@
-//import express
 const express = require("express");
 const app = express();
 app.use(express.json());
@@ -6,18 +5,15 @@ app.use(express.json());
 const cors = require("cors");
 app.use(cors());
 
-//import multer
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
 const { Op } = require("sequelize");
 
-//import model
 const models = require("../models/index");
 const tipe_kamar = models.tipe_kamar;
 
-//config storage image
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "../backend/image/tipe_kamar");
@@ -28,12 +24,10 @@ const storage = multer.diskStorage({
 });
 let upload = multer({ storage: storage });
 
-//import auth
 const auth = require("../auth");
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = "TryMe";
 
-//get data
 app.get("/", auth, (req, res) => {
   tipe_kamar
     .findAll()
@@ -49,7 +43,6 @@ app.get("/", auth, (req, res) => {
     });
 });
 
-//get data by id
 app.get("/:id", auth, (req, res) => {
   tipe_kamar
     .findOne({ where: { id_tipe_kamar: req.params.id } })
@@ -62,7 +55,7 @@ app.get("/:id", auth, (req, res) => {
       } else {
         res.status(404).json({
           status: "error",
-          message: "Tipe kamar tidak ditemukan",
+          message: "Room type not found",
         });
       }
     })
@@ -74,7 +67,6 @@ app.get("/:id", auth, (req, res) => {
     });
 });
 
-//search data by tipe_kamar
 app.post("/search", auth, (req, res) => {
   tipe_kamar
     .findAll({
@@ -104,7 +96,7 @@ app.post("/", upload.single("foto"), auth, async (req, res) => {
     });
 
     if (existingTipeKamar) {
-      return res.status(400).json({ message: "Nama tipe kamar sudah ada" });
+      return res.status(400).json({ message: "Room type name already exists" });
     }
 
     if (!req.file) {
@@ -123,14 +115,13 @@ app.post("/", upload.single("foto"), auth, async (req, res) => {
     if (newTipeKamar) {
       return res.json({ message: "data has been inserted" });
     } else {
-      return res.status(500).json({ message: "Gagal menambahkan data" });
+      return res.status(500).json({ message: "Failed to add data" });
     }
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 });
 
-//edit data by id
 app.put("/:id", upload.single("foto"), auth, async (req, res) => {
   try {
     const param = { id_tipe_kamar: req.params.id };
@@ -139,7 +130,7 @@ app.put("/:id", upload.single("foto"), auth, async (req, res) => {
     });
 
     if (existingTipeKamar && existingTipeKamar.id_tipe_kamar !== req.params.id) {
-      return res.status(400).json({ message: "Nama tipe kamar sudah ada" });
+      return res.status(400).json({ message: "Room type name already exists" });
     }
 
     const data = {
@@ -149,12 +140,10 @@ app.put("/:id", upload.single("foto"), auth, async (req, res) => {
     };
 
     if (req.file) {
-      // get data by id
       const result = await tipe_kamar.findOne({ where: param });
       if (result) {
         let oldFileName = result.foto;
 
-        // delete old file
         let dir = path.join(
           __dirname,
           "../backend/image/tipe_kamar",
@@ -162,7 +151,6 @@ app.put("/:id", upload.single("foto"), auth, async (req, res) => {
         );
         fs.unlink(dir, (err) => console.log(err));
 
-        // set new filename
         data.foto = req.file.filename;
       }
     }
@@ -174,39 +162,54 @@ app.put("/:id", upload.single("foto"), auth, async (req, res) => {
         message: "data has been updated",
       });
     } else {
-      return res.status(500).json({ message: "Gagal memperbarui data" });
+      return res.status(500).json({ message: "Failed to update data" });
     }
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 });
 
-//delete data by id
-app.delete("/:id", auth, (req, res) => {
+app.delete("/:id", auth, async (req, res) => {
   let param = {
     id_tipe_kamar: req.params.id,
   };
-  tipe_kamar
-    .destroy({ where: param })
-    .then((result) => {
-      if (result === 1) {
-        res.json({
-          status: "success",
-          message: "Data has been deleted",
-        });
-      } else {
-        res.status(404).json({
-          status: "error",
-          message: "Tipe kamar tidak ditemukan",
-        });
-      }
-    })
-    .catch((error) => {
-      res.status(500).json({
+
+  try {
+    const tipeKamarData = await tipe_kamar.findOne({ where: param });
+    
+    if (!tipeKamarData) {
+      return res.status(404).json({
         status: "error",
-        message: error.message,
+        message: "Room type not found",
       });
+    }
+
+    if (tipeKamarData.foto) {
+      const filePath = path.join(__dirname, "../backend/image/tipe_kamar", tipeKamarData.foto);
+      fs.unlink(filePath, (err) => {
+        if (err) console.log("Error deleting file:", err);
+      });
+    }
+
+    const result = await tipe_kamar.destroy({ where: param });
+    
+    if (result === 1) {
+      res.json({
+        status: "success",
+        message: "Data has been deleted",
+      });
+    } else {
+      res.status(404).json({
+        status: "error",
+        message: "Room type not found",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message,
     });
+  }
 });
 
 module.exports = app;

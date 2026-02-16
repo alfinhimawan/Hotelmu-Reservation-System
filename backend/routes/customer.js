@@ -1,21 +1,16 @@
-//import express
 const express = require("express");
 const app = express();
 app.use(express.json());
 
-// import md5
-const md5 = require("md5");
+const bcrypt = require("bcrypt");
 
-//import multer
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-//import model
 const models = require("../models/index");
 const customer = models.customer;
 
-//config storage image
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "../backend/image/customer");
@@ -26,37 +21,88 @@ const storage = multer.diskStorage({
 });
 let upload = multer({ storage: storage });
 
-//import auth
 const auth = require("../auth");
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = "TryMe";
 
-//login
 app.post("/auth", async (req, res) => {
-  let data = {
-    email: req.body.email,
-    password: md5(req.body.password),
-  };
-
-  let result = await customer.findOne({ where: data });
-  if (result) {
-    let payload = JSON.stringify(result);
-    // generate token
-    let token = jwt.sign(payload, SECRET_KEY);
-    res.json({
-      logged: true,
-      data: result,
-      token: token,
-    });
-  } else {
-    res.json({
+  try {
+    let result = await customer.findOne({ where: { email: req.body.email } });
+    
+    if (result) {
+      const passwordMatch = await bcrypt.compare(req.body.password, result.password);
+      if (passwordMatch) {
+        let payload = JSON.stringify(result);
+        let token = jwt.sign(payload, SECRET_KEY);
+        res.json({
+          logged: true,
+          data: result,
+          token: token,
+        });
+      } else {
+        res.json({
+          logged: false,
+          message: "Invalid username or password",
+        });
+      }
+    } else {
+      res.json({
+        logged: false,
+        message: "Invalid username or password",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
       logged: false,
-      message: "Invalid username or password",
+      message: "Authentication error",
+      error: error.message,
     });
   }
 });
 
-//get data
+// Verify customer endpoint - untuk validasi token dan cek customer di database
+app.get("/me/verify", auth, async (req, res) => {
+  try {
+    // Parse token dari header
+    const token = req.headers.authorization?.split(" ")[1];
+    
+    if (!token) {
+      return res.status(401).json({
+        logged: false,
+        message: "Token not provided",
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const customerData = JSON.parse(decoded);
+
+    // Cek apakah customer masih ada di database
+    const customerExists = await customer.findOne({
+      where: { id_customer: customerData.id_customer },
+    });
+
+    if (!customerExists) {
+      return res.status(401).json({
+        logged: false,
+        message: "Customer not found",
+      });
+    }
+
+    // Token valid dan customer ada di database
+    return res.json({
+      logged: true,
+      data: customerExists,
+    });
+  } catch (error) {
+    return res.status(401).json({
+      logged: false,
+      message: "Invalid or expired token",
+      error: error.message,
+    });
+  }
+});
+
 app.get("/", auth, (req, res) => {
   customer
     .findAll()
@@ -72,7 +118,6 @@ app.get("/", auth, (req, res) => {
     });
 });
 
-//post data
 app.post("/", upload.single("foto"), async (req, res) => {
     try {
       const existingCustomer = await customer.findOne({
@@ -80,65 +125,65 @@ app.post("/", upload.single("foto"), async (req, res) => {
       });
   
       if (existingCustomer) {
-        return res.status(400).json({ message: "Nama sudah digunakan" });
+        return res.status(400).json({ message: "Name already in use" });
       }
   
       if (!req.file) {
         return res.json({ message: "No uploaded file" });
       }
   
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      
       let data = {
         nama: req.body.nama,
         foto: req.file.filename,
         email: req.body.email,
-        password: md5(req.body.password),
+        password: hashedPassword,
       };
   
       const newCustomer = await customer.create(data);
   
       if (newCustomer) {
-        return res.json({ message: "Selesai Menambahkan Data Baru" });
+        return res.json({ message: "Customer created successfully" });
       } else {
-        return res.status(500).json({ message: "Gagal menambahkan data" });
+        return res.status(500).json({ message: "Failed to add data" });
       }
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
 });
   
-//edit data by id
-app.put("/:id", upload.single("foto"), auth, (req, res) => {
+app.put("/:id", upload.single("foto"), auth, async (req, res) => {
   let param = { id_customer: req.params.id };
   let data = {
     nama: req.body.nama,
     email: req.body.email,
-    password: md5(req.body.password),
   };
+  
   if (req.file) {
-    // get data by id
-    const row = customer
-      .findOne({ where: param })
-      .then((result) => {
-        let oldFileName = result.image;
-
-        // delete old file
+    try {
+      const result = await customer.findOne({ where: param });
+      
+      if (result && result.foto) {
         let dir = path.join(
           __dirname,
           "../backend/image/customer",
-          oldFileName
+          result.foto
         );
-        fs.unlink(dir, (err) => console.log(err));
-      })
-      .catch((error) => {
-        console.log(error.message);
-      });
+        fs.unlink(dir, (err) => {
+          if (err) console.log("Error deleting old file:", err);
+        });
+      }
 
-    // set new filename
-    data.image = req.file.filename;
+      data.foto = req.file.filename;
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 
   if (req.body.password) {
-    data.password = md5(req.body.password);
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    data.password = hashedPassword;
   }
 
   customer
@@ -155,31 +200,46 @@ app.put("/:id", upload.single("foto"), auth, (req, res) => {
     });
 });
 
-//delete data by id
-app.delete("/:id", auth, (req, res) => {
+app.delete("/:id", auth, async (req, res) => {
   let param = {
     id_customer: req.params.id,
   };
-  customer
-    .destroy({ where: param })
-    .then((result) => {
-      if (result === 1) {
-        res.json({
-          status: "success",
-          message: "Data has been deleted",
-        });
-      } else {
-        res.status(404).json({
-          status: "error",
-          message: "Customer tidak ditemukan",
-        });
-      }
-    })
-    .catch((error) => {
-      res.json({
-        message: error.message,
+
+  try {
+    const customerData = await customer.findOne({ where: param });
+    
+    if (!customerData) {
+      return res.status(404).json({
+        status: "error",
+        message: "Customer not found",
       });
+    }
+
+    if (customerData.foto) {
+      const filePath = path.join(__dirname, "../backend/image/customer", customerData.foto);
+      fs.unlink(filePath, (err) => {
+        if (err) console.log("Error deleting file:", err);
+      });
+    }
+
+    const result = await customer.destroy({ where: param });
+    
+    if (result === 1) {
+      res.json({
+        status: "success",
+        message: "Data has been deleted",
+      });
+    } else {
+      res.status(404).json({
+        status: "error",
+        message: "Customer not found",
+      });
+    }
+  } catch (error) {
+    res.json({
+      message: error.message,
     });
+  }
 });
 
 module.exports = app;

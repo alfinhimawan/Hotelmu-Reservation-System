@@ -26,7 +26,7 @@ Folder ini berisi source code frontend untuk admin & resepsionis aplikasi Hotelm
    ```
 
 ## 📝 Catatan
-- Pastikan backend sudah berjalan di port 8081
+- Pastikan backend sudah berjalan di port 5000
 - Akses: http://localhost:5173 (default Vite)
 - Hanya user dengan role admin/resepsionis yang dapat login ke dashboard ini.
 

@@ -3,6 +3,7 @@ import { capacity, capacityRiwayat, dateRiwayat, durationRiwayat, email, personR
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import moment from 'moment'
+import { API_ENDPOINTS } from '../../constants/api';
 
 const ListPemesanan = () => {
   let [pemesanan, setPemesanan] = useState([]);
@@ -10,7 +11,7 @@ const ListPemesanan = () => {
   let [riwayat, setRiwayat] = useState()
   useEffect(() => {
     let id_customer = window.sessionStorage.getItem("id_customer")
-    axios.get(`http://localhost:8081/pemesanan/findById/${id_customer}`, {
+    axios.get(`${API_ENDPOINTS.PEMESANAN}/findById/${id_customer}`, {
         headers : {'Authorization' : 'Bearer ' + sessionStorage.getItem('token')}
     })
     .then(res => {
@@ -27,7 +28,7 @@ const handleCari = () => {
     tgl_pemesanan: search,
   };
   axios
-    .post(`http://localhost:8081/pemesanan/findByTglPemesanan`, data, {
+    .post(`${API_ENDPOINTS.PEMESANAN}/findByTglPemesanan`, data, {
       headers: {
         Authorization: "Bearer " + sessionStorage.getItem("token"),
       },
@@ -48,7 +49,7 @@ useEffect(() => {
   } else {
     // Jika 'search' kosong, ambil semua data pemesanan
     axios
-      .get(`http://localhost:8081/pemesanan`, {
+      .get(API_ENDPOINTS.PEMESANAN, {
         headers: {
           Authorization: "Bearer " + sessionStorage.getItem("token"),
         },

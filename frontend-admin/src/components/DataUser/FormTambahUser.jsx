@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
+import { API_ENDPOINTS } from "../../constants/api";
 
 const FormTambahUser = () => {
   const [foto, setFoto] = useState(null);
@@ -8,6 +10,7 @@ const FormTambahUser = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleUploadChange = (e) => {
@@ -18,6 +21,8 @@ const FormTambahUser = () => {
   const handleAddData = (event) => {
     event.preventDefault();
 
+    setIsLoading(true);
+
     const formData = new FormData();
     formData.append("foto", foto);
     formData.append("nama_user", namaUser);
@@ -25,7 +30,7 @@ const FormTambahUser = () => {
     formData.append("password", password);
     formData.append("role", role);
 
-    const url = "http://localhost:8081/user";
+    const url = API_ENDPOINTS.USER;
 
     axios
       .post(url, formData, {
@@ -35,16 +40,28 @@ const FormTambahUser = () => {
       })
       .then((response) => {
         console.log(response.data);
-        if (response.data.message === "Selesai Menambahkan Data Baru") {
-          alert("Selesai Menambahkan Data Baru");
-          navigate("/dataUser");
-        } else if (response.data.message === "Nama pengguna sudah ada") {
-          alert("Nama pengguna sudah ada");
+        if (response.status === 200 || response.status === 201) {
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: response.data.message || "Data user berhasil ditambahkan",
+            confirmButtonColor: "#3085d6",
+          }).then(() => {
+            navigate("/dataUser");
+          });
         }
       })
       .catch((error) => {
         console.log(error);
-        alert("Terjadi kesalahan saat menambahkan data karena nama pengguna sudah ada");
+        Swal.fire({
+          icon: "error",
+          title: "Gagal!",
+          text: error.response?.data?.message || "Terjadi kesalahan saat menambahkan data",
+          confirmButtonColor: "#3085d6",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
@@ -137,8 +154,24 @@ const FormTambahUser = () => {
           >
             Kembali
           </Link>
-          <button className="w-1/2 h-[52px] text-white primary-bg rounded-lg hidden sm:block mt-4 ml-4">
-            Tambah
+          <button 
+            type="submit"
+            disabled={isLoading}
+            className={`w-1/2 h-[52px] text-white rounded-lg hidden sm:flex mt-4 ml-4 justify-center items-center ${
+              isLoading ? 'bg-gray-400 cursor-not-allowed' : 'primary-bg hover:opacity-90'
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Memproses...
+              </>
+            ) : (
+              'Tambah'
+            )}
           </button>
         </div>
       </form>

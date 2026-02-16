@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, editData } from "../../assets";
 import axios from "axios";
+import Swal from "sweetalert2";
+import { API_ENDPOINTS } from "../../constants/api";
 import "./style/stylesTipeKamar.css"; // Impor file CSS Anda di sini
 
 const Table = () => {
@@ -19,7 +21,7 @@ const Table = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8081/tipe_kamar`, {
+      .get(API_ENDPOINTS.TIPE_KAMAR, {
         headers: { Authorization: "Bearer " + sessionStorage.getItem("token") },
       })
       .then((res) => {
@@ -36,7 +38,7 @@ const Table = () => {
       nama_tipe_kamar: search,
     };
     axios
-      .post(`http://localhost:8081/tipe_kamar/search`, data, {
+      .post(`${API_ENDPOINTS.TIPE_KAMAR}/search`, data, {
         headers: {
           Authorization: "Bearer " + sessionStorage.getItem("token"),
         },
@@ -55,7 +57,7 @@ const Table = () => {
       handleCari();
     } else if (search === "") {
       axios
-        .get(`http://localhost:8081/tipe_kamar`, {
+        .get(API_ENDPOINTS.TIPE_KAMAR, {
           headers: {
             Authorization: "Bearer " + sessionStorage.getItem("token"),
           },
@@ -71,23 +73,47 @@ const Table = () => {
   }, [search]);
 
   function Delete(id) {
-    let url = "http://localhost:8081/tipe_kamar/" + id;
-    if (window.confirm("Apakah Anda Yakin Untuk Menghapus Data?")) {
-      axios
-        .delete(url, {
-          headers: {
-            Authorization: "Bearer " + sessionStorage.getItem("token"),
-          },
-        })
-        .then((response) => {
-          console.log(response);
-          window.location.reload(false);
-          tipeKamar();
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
+    let url = `${API_ENDPOINTS.TIPE_KAMAR}/${id}`;
+    Swal.fire({
+      title: 'Hapus Data?',
+      text: 'Apakah Anda yakin ingin menghapus data tipe kamar ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios
+          .delete(url, {
+            headers: {
+              Authorization: "Bearer " + sessionStorage.getItem("token"),
+            },
+          })
+          .then((response) => {
+            console.log(response);
+            Swal.fire({
+              icon: 'success',
+              title: 'Terhapus!',
+              text: response.data.message || 'Data tipe kamar berhasil dihapus',
+              confirmButtonColor: '#3085d6',
+            }).then(() => {
+              window.location.reload(false);
+              tipeKamar();
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Gagal!',
+              text: error.response?.data?.message || 'Gagal menghapus data tipe kamar',
+              confirmButtonColor: '#3085d6',
+            });
+          });
+      }
+    });
   }
 
   useEffect(() => {
@@ -169,7 +195,7 @@ const Table = () => {
               <td className="p-4 ">
                 <img
                   className="w-14 rounded-full"
-                  src={`http://localhost:8081/image/tipe_kamar/${tipeKamar.foto}`}
+                  src={`${API_ENDPOINTS.IMAGE_TIPE_KAMAR}/${tipeKamar.foto}`}
                   alt=""
                 />
               </td>

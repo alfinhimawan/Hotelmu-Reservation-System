@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import { useParams } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../constants/api';
 
 const FormEditDataKamar = () => {
   let [TipeKamar, setTipeKamar] = useState([]);
   let [nomorKamar, setNomorKamar] = useState('');
   let [idTipeKamar, setIdTipeKamar] = useState('');
+  let [isLoading, setIsLoading] = useState(false);
   const { id } = useParams();
   let navigate = useNavigate();
   let [errorMessage, setErrorMessage] = useState('');
@@ -19,7 +22,7 @@ const FormEditDataKamar = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8081/kamar/${id}`, {
+      .get(`${API_ENDPOINTS.KAMAR}/${id}`, {
         headers: { Authorization: 'Bearer ' + sessionStorage.getItem('token') },
       })
       .then((res) => {
@@ -34,7 +37,7 @@ const FormEditDataKamar = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8081/tipe_kamar`, {
+      .get(API_ENDPOINTS.TIPE_KAMAR, {
         headers: { Authorization: 'Bearer ' + sessionStorage.getItem('token') },
       })
       .then((res) => {
@@ -48,30 +51,43 @@ const FormEditDataKamar = () => {
 
   function Edit(e) {
     e.preventDefault();
+    
+    setIsLoading(true);
+    
     let data = {
       nomor_kamar: nomorKamar,
       id_tipe_kamar: idTipeKamar,
     };
     axios
-      .put(`http://localhost:8081/kamar/${id}`, data, {
+      .put(`${API_ENDPOINTS.KAMAR}/${id}`, data, {
         headers: { Authorization: 'Bearer ' + sessionStorage.getItem('token') },
       })
       .then((response) => {
-        if (response.data.message === 'Nomor kamar sudah ada') {
-          // Menggunakan alert jika nomor kamar sudah ada
-          alert('Nomor kamar sudah ada');
-        } else {
+        if (response.status === 200 || response.status === 201) {
           setErrorMessage('');
-          // Hanya menavigasi jika pembaruan berhasil
-          alert('Selesai Mengupdate Data');
-          navigate('/dataKamar/'); // Navigasi ke halaman dataKamar
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: response.data.message || 'Data kamar berhasil diupdate',
+            confirmButtonColor: '#3085d6',
+          }).then(() => {
+            navigate('/dataKamar/');
+          });
         }
       })
       .catch((error) => {
         console.log(error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal!',
+          text: error.response?.data?.message || 'Terjadi kesalahan saat mengupdate data',
+          confirmButtonColor: '#3085d6',
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }
-  
 
 
   return (
@@ -123,8 +139,24 @@ const FormEditDataKamar = () => {
           >
             Kembali
           </Link>
-          <button className="w-1/2 h-[52px] text-white primary-bg rounded-lg hidden sm:block mt-4 ml-4">
-            Ubah
+          <button 
+            type="submit"
+            disabled={isLoading}
+            className={`w-1/2 h-[52px] text-white rounded-lg hidden sm:flex mt-4 ml-4 justify-center items-center ${
+              isLoading ? 'bg-gray-400 cursor-not-allowed' : 'primary-bg hover:opacity-90'
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Memproses...
+              </>
+            ) : (
+              'Ubah'
+            )}
           </button>
         </div>
       </form>

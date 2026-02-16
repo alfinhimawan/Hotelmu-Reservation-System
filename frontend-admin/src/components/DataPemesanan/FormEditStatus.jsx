@@ -1,11 +1,14 @@
 import React, {useState, useEffect} from 'react'
 import {Link, useNavigate} from 'react-router-dom'
 import axios from 'axios'
+import Swal from 'sweetalert2'
 import { useParams } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../constants/api';
 
 const FormEditStatus = () => {
 
     let [ubahStatus, setUbahStatus] = useState()
+    let [isLoading, setIsLoading] = useState(false)
     const { id } = useParams();
     console.log(id)
     let navigate = useNavigate()
@@ -17,7 +20,7 @@ const FormEditStatus = () => {
       },[])
 
       useEffect(() => {
-        axios.get(`http://localhost:8081/pemesanan/${id}`, {
+        axios.get(`${API_ENDPOINTS.PEMESANAN}/${id}`, {
             headers : {'Authorization' : 'Bearer ' + sessionStorage.getItem('token')}
         })
         .then(res => {
@@ -34,16 +37,45 @@ const FormEditStatus = () => {
         let data = {
             status_pemesanan: ubahStatus,
         }
-        if(window.confirm("Selesai Merubah Data?"))
-        axios.put(`http://localhost:8081/pemesanan/${id}`, data, {
-          headers : {'Authorization' : 'Bearer ' + sessionStorage.getItem('token')}
-        })
-        .then(res => {
-          console.log(res.data)
-          navigate('/dataPemesanan/')
-        })
-        .catch(error => {
-          console.log(error)
+        Swal.fire({
+          title: 'Ubah Status?',
+          text: 'Apakah Anda yakin ingin mengubah status pemesanan ini?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Ya, ubah!',
+          cancelButtonText: 'Batal'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            setIsLoading(true)
+            axios.put(`${API_ENDPOINTS.PEMESANAN}/${id}`, data, {
+              headers : {'Authorization' : 'Bearer ' + sessionStorage.getItem('token')}
+            })
+            .then(res => {
+              console.log(res.data)
+              Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: res.data.message || 'Status pemesanan berhasil diubah',
+                confirmButtonColor: '#3085d6',
+              }).then(() => {
+                navigate('/dataPemesanan/')
+              })
+            })
+            .catch(error => {
+              console.log(error)
+              Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: error.response?.data?.message || 'Gagal mengubah status pemesanan',
+                confirmButtonColor: '#3085d6',
+              })
+            })
+            .finally(() => {
+              setIsLoading(false)
+            })
+          }
         })
       }
 
@@ -66,8 +98,24 @@ const FormEditStatus = () => {
             <Link to="/dataPemesanan" className='w-1/2 h-[52px] text-blue primary-stroke rounded-lg hidden sm:flex mt-4 sm:justify-center sm:items-center '>
               Kembali
             </Link>
-            <button className='w-1/2 h-[52px] text-white primary-bg rounded-lg hidden sm:block mt-4 ml-4'>
-                Ubah
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className={`w-1/2 h-[52px] text-white rounded-lg hidden sm:flex mt-4 ml-4 justify-center items-center ${
+                isLoading ? 'bg-gray-400 cursor-not-allowed' : 'primary-bg hover:opacity-90'
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Memproses...
+                </>
+              ) : (
+                'Ubah'
+              )}
             </button>
         </div>
         </form>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
 import moment from "moment";
+import { API_ENDPOINTS } from '../../constants/api';
 
 const Form = () => {
   let [namaCustomer, setNamaCustomer] = useState();
@@ -11,8 +13,22 @@ const Form = () => {
   let [tglCheckIn, setTglCheckIn] = useState();
   let [tglCheckOut, setTglCheckOut] = useState();
   let [harga, setHarga] = useState();
+  let [isLoading, setIsLoading] = useState(false);
+  let [errors, setErrors] = useState({});
 
   let navigate = useNavigate();
+
+  // Validasi nama tamu
+  const handleNamaTamuChange = (e) => {
+    const value = e.target.value;
+    setNamaTamu(value);
+    
+    if (value && value.length < 3) {
+      setErrors(prev => ({ ...prev, namaTamu: 'Nama tamu minimal 3 karakter' }));
+    } else {
+      setErrors(prev => ({ ...prev, namaTamu: '' }));
+    }
+  };
 
   useEffect(() => {
     const item = sessionStorage.getItem("nama_tipe_kamar");
@@ -49,7 +65,31 @@ const Form = () => {
   function addPemesanan(e) {
     e.preventDefault();
 
-    let url = "http://localhost:8081/pemesanan";
+    // Validasi sebelum submit
+    let newErrors = {};
+    
+    if (!namaTamu) {
+      newErrors.namaTamu = 'Nama tamu wajib diisi';
+    } else if (namaTamu.length < 3) {
+      newErrors.namaTamu = 'Nama tamu minimal 3 karakter';
+    }
+    
+    if (jumlahKamar < 1 || jumlahKamar > 10) {
+      newErrors.jumlahKamar = 'Jumlah kamar harus antara 1-10';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      Swal.fire({
+        icon: 'warning',
+        title: 'Periksa Form Anda',
+        text: 'Mohon lengkapi semua field yang wajib diisi',
+        confirmButtonColor: '#3085d6',
+      });
+      return;
+    }
+
+    let url = API_ENDPOINTS.PEMESANAN;
 
     let data = {
       id_customer: sessionStorage.getItem("id_customer"),
@@ -62,26 +102,49 @@ const Form = () => {
       id_user: null,
     };
     console.log(data);
-    if (window.confirm("Selesai Menambahkan Data Baru?")) {
-      axios
-        .post(url, data, {
-          headers: {
-            Authorization: "Bearer " + sessionStorage.getItem("token"),
-          },
-        })
-        .then((response) => {
-          if (response.data.message === "Sorry sir/madam. The room you have chosen is currently not available") {
-            window.alert("Sorry sir/madam. The room you have chosen is currently not available");
-            navigate("/cariKamar");
-          } else {
-            navigate("/riwayat");
-          }
-          console.log(response.data);
+    Swal.fire({
+      title: 'Konfirmasi Pemesanan',
+      text: 'Apakah Anda yakin ingin melakukan pemesanan?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, lanjutkan!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setIsLoading(true);
+        axios
+          .post(url, data, {
+            headers: {
+              Authorization: "Bearer " + sessionStorage.getItem("token"),
+            },
+          })
+          .then((response) => {
+            Swal.fire({
+              icon: "success",
+              title: "Berhasil!",
+              text: response.data.message || "Pemesanan berhasil dibuat",
+              confirmButtonColor: "#3085d6",
+            }).then(() => {
+              navigate("/riwayat");
+            });
+            console.log(response.data);
         })
         .catch((error) => {
           console.log(error);
+          Swal.fire({
+            icon: "error",
+            title: "Gagal!",
+            text: error.response?.data?.message || "Gagal membuat pemesanan",
+            confirmButtonColor: "#3085d6",
+          });
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
-    }
+      }
+    });
   }
   // console.log(sessionStorage.getItem('id_tipe_kamar'))
 
@@ -119,11 +182,16 @@ const Form = () => {
     // Ambil nilai dari input
     const newValue = event.target.value;
 
-    // Periksa apakah nilai berada dalam rentang 1 hingga 50
+    // Periksa apakah nilai berada dalam rentang 1 hingga 10
     if (newValue >= 1 && newValue <= 10) {
       setJumlahKamar(newValue); // Set nilai baru jika valid
-    }
-  };
+      setErrors(prev => ({ ...prev, jumlahKamar: '' }));
+    } else if (newValue < 1) {
+      setErrors(prev => ({ ...prev, jumlahKamar: 'Minimal 1 kamar' }));
+    } else if (newValue > 10) {
+      setErrors(prev => ({ ...prev, jumlahKamar: 'Maksimal 10 kamar' }));
+    }
+  };
 
   return (
     <div className="flex flex-col p-8 stroke-box mt-14 w-full">
@@ -177,12 +245,19 @@ const Form = () => {
               Nama Tamu
             </label>
             <input
-              onChange={(e) => setNamaTamu(e.target.value)}
+              onChange={handleNamaTamuChange}
               type="text"
               name="checkIn"
-              className="bg-form p-4 border-r-[16px] border-r-[#f6f6f6] mt-2"
+              className={`bg-form p-4 border-r-[16px] border-r-[#f6f6f6] mt-2 ${
+                errors.namaTamu ? 'border-2 border-red-500' : ''
+              }`}
               value={namaTamu}
+              placeholder="Masukkan nama tamu"
+              required
             />
+            {errors.namaTamu && (
+              <p className="text-red-500 text-sm mt-1">{errors.namaTamu}</p>
+            )}
           </div>
           <div className="w-1/2 flex flex-col mb-4 ml-5">
             <label htmlFor="checkIn" className="text-gray">
@@ -192,9 +267,18 @@ const Form = () => {
               onChange={handleChange}
               type="number"
               name="checkIn"
-              className="bg-form p-4 border-r-[16px] border-r-[#f6f6f6] mt-2"
+              min="1"
+              max="10"
+              className={`bg-form p-4 border-r-[16px] border-r-[#f6f6f6] mt-2 ${
+                errors.jumlahKamar ? 'border-2 border-red-500' : ''
+              }`}
               value={jumlahKamar}
+              required
             />
+            {errors.jumlahKamar && (
+              <p className="text-red-500 text-sm mt-1">{errors.jumlahKamar}</p>
+            )}
+            <p className="text-gray text-xs mt-1">Minimal 1, Maksimal 10 kamar</p>
           </div>
           <div className="w-1/2 flex flex-col mb-4 ml-5">
             <label htmlFor="checkIn" className="text-gray">
@@ -232,9 +316,24 @@ const Form = () => {
 
         <button
           type="submit"
-          className="w-full h-[52px] text-white primary-bg rounded-lg hidden sm:block mt-4"
+          disabled={isLoading || Object.values(errors).some(err => err)}
+          className={`w-full h-[52px] text-white rounded-lg hidden sm:flex justify-center items-center mt-4 ${
+            isLoading || Object.values(errors).some(err => err)
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'primary-bg hover:opacity-90'
+          }`}
         >
-          Pesan Sekarang
+          {isLoading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Memproses...
+            </>
+          ) : (
+            'Pesan Sekarang'
+          )}
         </button>
       </form>
 

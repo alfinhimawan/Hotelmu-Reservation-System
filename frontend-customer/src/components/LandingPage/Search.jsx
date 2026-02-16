@@ -5,6 +5,7 @@ import { bed, arrowRight, search, illusSearch } from "../../assets";
 import ListKamar from "../Cari Kamar/ListKamar";
 import { useContext } from "react";
 import DateContext from "../../../context/DateProvider";
+import { API_ENDPOINTS } from "../../constants/api";
 
 const Search = () => {
   let [checkIn, setCheckIn] = useState();
@@ -21,7 +22,7 @@ const Search = () => {
 
   function AddData(event) {
     event.preventDefault();
-    let url = "http://localhost:8081/filter_kamar";
+    let url = API_ENDPOINTS.FILTER_KAMAR;
 
     let data = {
       check_in_date: checkIn,

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, editData } from "../../assets";
 import axios from "axios";
+import Swal from "sweetalert2";
+import { API_ENDPOINTS } from "../../constants/api";
 import "./style/stylesKamar.css"; // Sesuaikan dengan path ke file CSS Anda
 
 const Table = () => {
@@ -19,7 +21,7 @@ const Table = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8081/kamar`, {
+      .get(API_ENDPOINTS.KAMAR, {
         headers: { Authorization: "Bearer " + sessionStorage.getItem("token") },
       })
       .then((res) => {
@@ -36,7 +38,7 @@ const Table = () => {
       nomor_kamar: search,
     };
     axios
-      .post(`http://localhost:8081/kamar/search`, data, {
+      .post(`${API_ENDPOINTS.KAMAR}/search`, data, {
         headers: {
           Authorization: "Bearer " + sessionStorage.getItem("token"),
         },
@@ -55,7 +57,7 @@ const Table = () => {
       handleCari();
     } else if (search === "") {
       axios
-        .get(`http://localhost:8081/kamar`, {
+        .get(API_ENDPOINTS.KAMAR, {
           headers: {
             Authorization: "Bearer " + sessionStorage.getItem("token"),
           },
@@ -71,34 +73,55 @@ const Table = () => {
   }, [search]);
 
   function Delete(id) {
-    let url = "http://localhost:8081/kamar/" + id;
-    if (window.confirm("Apakah Anda Yakin Untuk Menghapus Data?")) {
-      axios
-        .delete(url, {
-          headers: {
-            Authorization: "Bearer " + sessionStorage.getItem("token"),
-          },
-        })
-        .then((respone) => {
-          kamar();
-          navigate("/dataKamar/");
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-      window.location.reload(false);
-    }
+    let url = `${API_ENDPOINTS.KAMAR}/${id}`;
+    Swal.fire({
+      title: 'Hapus Data?',
+      text: 'Apakah Anda yakin ingin menghapus data kamar ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios
+          .delete(url, {
+            headers: {
+              Authorization: "Bearer " + sessionStorage.getItem("token"),
+            },
+          })
+          .then((respone) => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Terhapus!',
+              text: respone.data.message || 'Data kamar berhasil dihapus',
+              confirmButtonColor: '#3085d6',
+            }).then(() => {
+              kamar();
+              navigate("/dataKamar/");
+            });
+          })
+          .catch((error) => {
+            console.log(error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Gagal!',
+              text: error.response?.data?.message || 'Gagal menghapus data kamar',
+              confirmButtonColor: '#3085d6',
+            });
+          });
+      }
+    });
   }
 
   useEffect(() => {
     const userRole = sessionStorage.getItem('role');
     if (userRole !== 'admin') {
-      // Jika bukan admin, arahkan kembali ke halaman yang sesuai (misalnya, dataPemesanan)
       navigate('/dataPemesanan');
     }
   }, [navigate]);
 
-  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = kamar.kamar?.slice(indexOfFirstItem, indexOfLastItem);
